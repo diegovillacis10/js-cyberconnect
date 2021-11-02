@@ -7,13 +7,13 @@ The JavaScript library provides two primary functions, connect and disconnect. T
 ### Installation
 
 ```sh
-npm install @jiayi920429/connecttest
+npm install @cyberlab/cyberconnect
 ```
 
 ### Basic usage
 
 ```ts
-import CyberConnect, { Env } from '@jiayi920429/connecttest';
+import CyberConnect, { Env } from 'npm install @cyberlab/cyberconnect';
 
 // ethProvider is an Ethereum provider
 // namespace is your applciation name
