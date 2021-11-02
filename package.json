@@ -1,6 +1,6 @@
 {
   "name": "@cyberlab/cyberconnect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The JavaScript library that allows user to control their decentralized identity(DIDs) and social graph data.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/cybertino/cyberconnect/issues"
   },
-  "homepage": "https://github.com/cybertino/cyberconnectt#readme",
+  "homepage": "https://github.com/cybertino/cyberconnect#readme",
   "dependencies": {
     "@3id/connect": "^0.2.5",
     "@ceramicnetwork/3id-did-resolver": "^1.4.6",

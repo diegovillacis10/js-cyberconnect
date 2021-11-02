@@ -122,7 +122,7 @@ class CyberConnect {
     return result?.outboundLink || [];
   }
 
-  async connect(targetAddr: string, alias: string = 'none') {
+  async connect(targetAddr: string, alias: string = '') {
     await this.authenticate();
 
     const resp = await follow(
