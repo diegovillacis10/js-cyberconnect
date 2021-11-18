@@ -107,6 +107,7 @@ class CyberConnect {
       aliases: {
         cyberConnect: this.endpoint.cyberConnectSchema,
       },
+      autopin: true,
     });
   }
 
