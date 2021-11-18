@@ -113,13 +113,14 @@ class CyberConnect {
   async getOutboundLink() {
     if (!this.idxInstance) {
       console.error('Could not find idx instance');
-      return [];
+      return null;
     }
+
     const result = (await this.idxInstance.get(
       'cyberConnect'
     )) as CyberConnetStore;
 
-    return result?.outboundLink || [];
+    return result?.outboundLink || null;
   }
 
   async connect(targetAddr: string, alias: string = '') {
@@ -138,32 +139,37 @@ class CyberConnect {
       return;
     }
 
-    const outboundLink = await this.getOutboundLink();
-
-    if (!this.idxInstance) {
-      console.error('Could not find idx instance');
-      return;
-    }
-
-    const link = outboundLink.find((link) => {
-      return link.target === targetAddr;
-    });
-
-    if (!link) {
-      const curTimeStr = String(Date.now());
-      outboundLink.push({
-        target: targetAddr,
-        connectionType: 'follow',
-        namespace: this.namespace,
-        alias,
-        createdAt: curTimeStr,
-      });
-    } else {
-      console.warn('You have already connected to the target address');
-    }
-
-    this.idxInstance.set('cyberConnect', { outboundLink });
     console.log('Connect success');
+
+    this.getOutboundLink().then((outboundLink) => {
+      if (!outboundLink) {
+        console.log('Can not get ceramic outboundLink');
+        return;
+      }
+
+      if (!this.idxInstance) {
+        console.error('Could not find idx instance');
+        return;
+      }
+
+      const link = outboundLink.find((link) => {
+        return link.target === targetAddr;
+      });
+
+      if (!link) {
+        const curTimeStr = String(Date.now());
+        outboundLink.push({
+          target: targetAddr,
+          connectionType: 'follow',
+          namespace: this.namespace,
+          alias,
+          createdAt: curTimeStr,
+        });
+        this.idxInstance.set('cyberConnect', { outboundLink });
+      } else {
+        console.warn('You have already connected to the target address');
+      }
+    });
   }
 
   async disconnect(targetAddr: string) {
@@ -180,21 +186,27 @@ class CyberConnect {
       return;
     }
 
-    const outboundLink = await this.getOutboundLink();
-
-    if (!this.idxInstance) {
-      console.error('Could not find idx instance');
-      return;
-    }
-
-    const newOutboundLink = outboundLink.filter((link) => {
-      return link.target !== targetAddr;
-    });
-
-    this.idxInstance.set('cyberConnect', {
-      outboundLink: newOutboundLink,
-    });
     console.log('Disconnect success');
+
+    this.getOutboundLink().then((outboundLink) => {
+      if (!outboundLink) {
+        console.log('Can not get ceramic outboundLink');
+        return;
+      }
+
+      if (!this.idxInstance) {
+        console.error('Could not find idx instance');
+        return;
+      }
+
+      const newOutboundLink = outboundLink.filter((link) => {
+        return link.target !== targetAddr;
+      });
+
+      this.idxInstance.set('cyberConnect', {
+        outboundLink: newOutboundLink,
+      });
+    });
   }
 }
 
