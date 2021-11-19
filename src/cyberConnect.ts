@@ -32,6 +32,7 @@ class CyberConnect {
   authProvider: EthereumAuthProvider | undefined;
   resolverRegistry: any;
   idxInstance: IDX | undefined;
+  signature: string = '';
 
   // ethProvider is an Ethereum provider and addresses an array of strings
   constructor(config: {
@@ -40,6 +41,10 @@ class CyberConnect {
     env: keyof typeof Env;
   }) {
     const { ethProvider, namespace, env } = config;
+
+    if (!namespace) {
+      throw 'Namespace can not be empty';
+    }
 
     this.namespace = namespace;
     this.endpoint = endpoints[env] || endpoints.PRODUCTION;
@@ -76,15 +81,27 @@ class CyberConnect {
     const rst = await this.authProvider.authenticate(
       'Allow this account to control your identity'
     );
+    this.signature = rst;
+  }
 
-    const authSecret = hash(fromString(rst.slice(2)));
-    const authId = (await this.authProvider.accountId()).toString();
+  private async setupIdx() {
+    if (this.idxInstance) {
+      return;
+    }
+
+    if (!this.authProvider) {
+      console.error('Could not find authProvider');
+      return;
+    }
+
+    if (!this.ceramicClient) return;
 
     const getPermission = async (request: any) => {
       return request.payload.paths;
     };
 
-    if (!this.ceramicClient) return;
+    const authSecret = hash(fromString(this.signature.slice(2)));
+    const authId = (await this.authProvider.accountId()).toString();
 
     const threeId = await ThreeIdProvider.create({
       getPermission,
@@ -123,16 +140,75 @@ class CyberConnect {
     return result?.outboundLink || null;
   }
 
+  private async ceramicConnect(targetAddr: string, alias: string = '') {
+    await this.setupIdx();
+
+    const outboundLink = await this.getOutboundLink();
+
+    if (!outboundLink) {
+      console.log('Can not get ceramic outboundLink');
+      return;
+    }
+
+    if (!this.idxInstance) {
+      console.error('Could not find idx instance');
+      return;
+    }
+
+    const link = outboundLink.find((link) => {
+      return link.target === targetAddr && link.namespace === this.namespace;
+    });
+
+    if (!link) {
+      const curTimeStr = String(Date.now());
+      outboundLink.push({
+        target: targetAddr,
+        connectionType: 'follow',
+        namespace: this.namespace,
+        alias,
+        createdAt: curTimeStr,
+      });
+      this.idxInstance.set('cyberConnect', { outboundLink });
+    } else {
+      console.warn('You have already connected to the target address');
+    }
+  }
+
+  private async ceramicDisconnect(targetAddr: string) {
+    await this.setupIdx();
+
+    const outboundLink = await this.getOutboundLink();
+
+    if (!outboundLink) {
+      console.log('Can not get ceramic outboundLink');
+      return;
+    }
+
+    if (!this.idxInstance) {
+      console.error('Could not find idx instance');
+      return;
+    }
+
+    const newOutboundLink = outboundLink.filter((link) => {
+      return link.target !== targetAddr || link.namespace !== this.namespace;
+    });
+
+    this.idxInstance.set('cyberConnect', {
+      outboundLink: newOutboundLink,
+    });
+  }
+
   async connect(targetAddr: string, alias: string = '') {
     await this.authenticate();
 
-    const resp = await follow(
-      this.address,
-      targetAddr,
+    const resp = await follow({
+      fromAddr: this.address,
+      toAddr: targetAddr,
       alias,
-      this.namespace,
-      this.endpoint.cyberConnectApi
-    );
+      namespace: this.namespace,
+      url: this.endpoint.cyberConnectApi,
+      signature: this.signature,
+    });
 
     if (resp?.data?.follow.result !== 'SUCCESS') {
       console.error('follow error: ', resp?.data?.follow.result);
@@ -141,45 +217,19 @@ class CyberConnect {
 
     console.log('Connect success');
 
-    this.getOutboundLink().then((outboundLink) => {
-      if (!outboundLink) {
-        console.log('Can not get ceramic outboundLink');
-        return;
-      }
-
-      if (!this.idxInstance) {
-        console.error('Could not find idx instance');
-        return;
-      }
-
-      const link = outboundLink.find((link) => {
-        return link.target === targetAddr;
-      });
-
-      if (!link) {
-        const curTimeStr = String(Date.now());
-        outboundLink.push({
-          target: targetAddr,
-          connectionType: 'follow',
-          namespace: this.namespace,
-          alias,
-          createdAt: curTimeStr,
-        });
-        this.idxInstance.set('cyberConnect', { outboundLink });
-      } else {
-        console.warn('You have already connected to the target address');
-      }
-    });
+    this.ceramicConnect(targetAddr, alias);
   }
 
   async disconnect(targetAddr: string) {
     await this.authenticate();
 
-    const resp = await unfollow(
-      this.address,
-      targetAddr,
-      this.endpoint.cyberConnectApi
-    );
+    const resp = await unfollow({
+      fromAddr: this.address,
+      toAddr: targetAddr,
+      url: this.endpoint.cyberConnectApi,
+      namespace: this.namespace,
+      signature: this.signature,
+    });
 
     if (resp?.data?.unfollow.result !== 'SUCCESS') {
       console.error('unfollow error: ', resp?.data?.unfollow.result);
@@ -188,25 +238,7 @@ class CyberConnect {
 
     console.log('Disconnect success');
 
-    this.getOutboundLink().then((outboundLink) => {
-      if (!outboundLink) {
-        console.log('Can not get ceramic outboundLink');
-        return;
-      }
-
-      if (!this.idxInstance) {
-        console.error('Could not find idx instance');
-        return;
-      }
-
-      const newOutboundLink = outboundLink.filter((link) => {
-        return link.target !== targetAddr;
-      });
-
-      this.idxInstance.set('cyberConnect', {
-        outboundLink: newOutboundLink,
-      });
-    });
+    this.ceramicDisconnect(targetAddr);
   }
 }
 

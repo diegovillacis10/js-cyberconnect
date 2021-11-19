@@ -1,19 +1,36 @@
 export type Query = 'connect' | 'disconnect';
 
-export const connectQuerySchema = (
-  fromAddr: String,
-  toAddr: String,
-  alias: String,
-  source: String
-) => {
-  return `mutation {\n  follow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", alias: \"${alias}\", source: \"${source}\") {\n    result\n  }\n}\n`;
+export const connectQuerySchema = ({
+  fromAddr,
+  toAddr,
+  alias,
+  namespace,
+  signature,
+}: {
+  fromAddr: String;
+  toAddr: String;
+  alias: String;
+  namespace: String;
+  signature: String;
+}) => {
+  return `mutation {\n  follow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", alias: \"${alias}\", namespace: \"${namespace}\", signature: \"${signature}\") {\n    result\n  }\n}\n`;
 };
 
-export const disconnectQuerySchema = (fromAddr: String, toAddr: String) => {
-  return `mutation {\n  unfollow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\") {\n    result\n  }\n}\n`;
+export const disconnectQuerySchema = ({
+  fromAddr,
+  toAddr,
+  namespace,
+  signature,
+}: {
+  fromAddr: String;
+  toAddr: String;
+  namespace: String;
+  signature: String;
+}) => {
+  return `mutation {\n  unfollow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", namespace: \"${namespace}\", signature: \"${signature}\") {\n    result\n  }\n}\n`;
 };
 
-export const querySchemas: { [key in Query]: Function } = {
+export const querySchemas = {
   connect: connectQuerySchema,
   disconnect: disconnectQuerySchema,
 };
@@ -46,18 +63,49 @@ export const handleQuery = (
   });
 };
 
-export const follow = (
-  fromAddr: String,
-  toAddr: String,
-  alias: String,
-  source: String,
-  url: string
-) => {
-  const schema = querySchemas['connect'](fromAddr, toAddr, alias, source);
+export const follow = ({
+  fromAddr,
+  toAddr,
+  alias,
+  namespace,
+  url,
+  signature,
+}: {
+  fromAddr: String;
+  toAddr: String;
+  alias: String;
+  namespace: String;
+  signature: string;
+  url: string;
+}) => {
+  const schema = querySchemas['connect']({
+    fromAddr,
+    toAddr,
+    alias,
+    namespace,
+    signature,
+  });
   return handleQuery(schema, url);
 };
 
-export const unfollow = (fromAddr: String, toAddr: String, url: string) => {
-  const schema = querySchemas['disconnect'](fromAddr, toAddr);
+export const unfollow = ({
+  fromAddr,
+  toAddr,
+  namespace,
+  url,
+  signature,
+}: {
+  fromAddr: String;
+  toAddr: String;
+  namespace: String;
+  signature: string;
+  url: string;
+}) => {
+  const schema = querySchemas['disconnect']({
+    fromAddr,
+    toAddr,
+    namespace,
+    signature,
+  });
   return handleQuery(schema, url);
 };
