@@ -7,11 +7,11 @@ export const connectQuerySchema = ({
   namespace,
   signature,
 }: {
-  fromAddr: String;
-  toAddr: String;
-  alias: String;
-  namespace: String;
-  signature: String;
+  fromAddr: string;
+  toAddr: string;
+  alias: string;
+  namespace: string;
+  signature: string;
 }) => {
   return `mutation {\n  follow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", alias: \"${alias}\", namespace: \"${namespace}\", signature: \"${signature}\") {\n    result\n  }\n}\n`;
 };
@@ -22,17 +22,34 @@ export const disconnectQuerySchema = ({
   namespace,
   signature,
 }: {
-  fromAddr: String;
-  toAddr: String;
-  namespace: String;
+  fromAddr: string;
+  toAddr: string;
+  namespace: string;
   signature: String;
 }) => {
   return `mutation {\n  unfollow(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", namespace: \"${namespace}\", signature: \"${signature}\") {\n    result\n  }\n}\n`;
 };
 
+export const setAliasQuerySchema = ({
+  fromAddr,
+  toAddr,
+  namespace,
+  signature,
+  alias,
+}: {
+  fromAddr: string;
+  toAddr: string;
+  namespace: string;
+  signature: string;
+  alias: string;
+}) => {
+  return `mutation {\n  setAlias(fromAddr: \"${fromAddr}\", toAddr: \"${toAddr}\", alias: \"${alias}\", namespace: \"${namespace}\", signature: \"${signature}\") {\n    result\n  }\n}\n`;
+};
+
 export const querySchemas = {
   connect: connectQuerySchema,
   disconnect: disconnectQuerySchema,
+  setAlias: setAliasQuerySchema,
 };
 
 export const request = async (url = '', data = {}) => {
@@ -71,10 +88,10 @@ export const follow = ({
   url,
   signature,
 }: {
-  fromAddr: String;
-  toAddr: String;
-  alias: String;
-  namespace: String;
+  fromAddr: string;
+  toAddr: string;
+  alias: string;
+  namespace: string;
   signature: string;
   url: string;
 }) => {
@@ -95,15 +112,40 @@ export const unfollow = ({
   url,
   signature,
 }: {
-  fromAddr: String;
-  toAddr: String;
-  namespace: String;
+  fromAddr: string;
+  toAddr: string;
+  namespace: string;
   signature: string;
   url: string;
 }) => {
   const schema = querySchemas['disconnect']({
     fromAddr,
     toAddr,
+    namespace,
+    signature,
+  });
+  return handleQuery(schema, url);
+};
+
+export const setAlias = ({
+  fromAddr,
+  toAddr,
+  alias,
+  namespace,
+  url,
+  signature,
+}: {
+  fromAddr: string;
+  toAddr: string;
+  alias: string;
+  namespace: string;
+  signature: string;
+  url: string;
+}) => {
+  const schema = querySchemas['setAlias']({
+    fromAddr,
+    toAddr,
+    alias,
     namespace,
     signature,
   });

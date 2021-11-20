@@ -8,7 +8,7 @@ import { fromString } from 'uint8arrays';
 import { DID } from 'dids';
 import { IDX } from '@ceramicstudio/idx';
 import { endpoints, Env, Endpoint } from './network';
-import { follow, unfollow } from './queries';
+import { follow, unfollow, setAlias } from './queries';
 
 interface Connection {
   connectionType: string;
@@ -199,6 +199,33 @@ class CyberConnect {
     });
   }
 
+  private async ceramicSetAlias(targetAddr: string, alias: string) {
+    await this.setupIdx();
+
+    const outboundLink = await this.getOutboundLink();
+
+    if (!outboundLink) {
+      console.log('Can not get ceramic outboundLink');
+      return;
+    }
+
+    if (!this.idxInstance) {
+      console.error('Could not find idx instance');
+      return;
+    }
+
+    const index = outboundLink.findIndex((link) => {
+      return link.target === targetAddr && link.namespace === this.namespace;
+    });
+
+    if (index !== -1) {
+      outboundLink[index] = { ...outboundLink[index], alias };
+      this.idxInstance.set('cyberConnect', { outboundLink });
+    } else {
+      console.warn("Couldn't find the target address in the given namespace");
+    }
+  }
+
   async connect(targetAddr: string, alias: string = '') {
     await this.authenticate();
 
@@ -240,6 +267,28 @@ class CyberConnect {
     console.log('Disconnect success');
 
     this.ceramicDisconnect(targetAddr);
+  }
+
+  async setAlias(targetAddr: string, alias: string) {
+    await this.authenticate();
+
+    const resp = await setAlias({
+      fromAddr: this.address,
+      toAddr: targetAddr,
+      url: this.endpoint.cyberConnectApi,
+      namespace: this.namespace,
+      signature: this.signature,
+      alias,
+    });
+
+    if (resp?.data?.setAlias.result !== 'SUCCESS') {
+      console.error('setAlias error: ', resp?.data?.setAlias.result);
+      return;
+    }
+
+    console.log('Set alias success');
+
+    this.ceramicSetAlias(targetAddr, alias);
   }
 }
 
