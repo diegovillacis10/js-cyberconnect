@@ -9,6 +9,7 @@ import { DID } from 'dids';
 import { IDX } from '@ceramicstudio/idx';
 import { endpoints, Env, Endpoint } from './network';
 import { follow, unfollow, setAlias } from './queries';
+import { ConnectError, ErrorCode } from './error';
 
 interface Connection {
   connectionType: string;
@@ -43,7 +44,7 @@ class CyberConnect {
     const { ethProvider, namespace, env } = config;
 
     if (!namespace) {
-      throw 'Namespace can not be empty';
+      throw new ConnectError(ErrorCode.EmptyNamespace);
     }
 
     this.namespace = namespace;
@@ -74,8 +75,7 @@ class CyberConnect {
     }
 
     if (!this.authProvider) {
-      console.error('Could not find authProvider');
-      return;
+      throw new ConnectError(ErrorCode.NoAuthProvider);
     }
 
     const rst = await this.authProvider.authenticate(
@@ -90,7 +90,7 @@ class CyberConnect {
     }
 
     if (!this.authProvider) {
-      console.error('Could not find authProvider');
+      new ConnectError(ErrorCode.NoAuthProvider).printError();
       return;
     }
 
@@ -130,7 +130,10 @@ class CyberConnect {
 
   async getOutboundLink() {
     if (!this.idxInstance) {
-      console.error('Could not find idx instance');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Could not find idx instance'
+      ).printError();
       return null;
     }
 
@@ -147,12 +150,18 @@ class CyberConnect {
     const outboundLink = await this.getOutboundLink();
 
     if (!outboundLink) {
-      console.log('Can not get ceramic outboundLink');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Can not get ceramic outboundLink'
+      ).printError();
       return;
     }
 
     if (!this.idxInstance) {
-      console.error('Could not find idx instance');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Could not find idx instance'
+      ).printError();
       return;
     }
 
@@ -181,12 +190,18 @@ class CyberConnect {
     const outboundLink = await this.getOutboundLink();
 
     if (!outboundLink) {
-      console.log('Can not get ceramic outboundLink');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Can not get ceramic outboundLink'
+      ).printError();
       return;
     }
 
     if (!this.idxInstance) {
-      console.error('Could not find idx instance');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Could not find idx instance'
+      ).printError();
       return;
     }
 
@@ -205,12 +220,18 @@ class CyberConnect {
     const outboundLink = await this.getOutboundLink();
 
     if (!outboundLink) {
-      console.log('Can not get ceramic outboundLink');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Can not get ceramic outboundLink'
+      ).printError();
       return;
     }
 
     if (!this.idxInstance) {
-      console.error('Could not find idx instance');
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Could not find idx instance'
+      ).printError();
       return;
     }
 
@@ -222,28 +243,37 @@ class CyberConnect {
       outboundLink[index] = { ...outboundLink[index], alias };
       this.idxInstance.set('cyberConnect', { outboundLink });
     } else {
-      console.warn("Couldn't find the target address in the given namespace");
+      new ConnectError(
+        ErrorCode.CeramicError,
+        "Couldn't find the target address in the given namespace"
+      ).printError();
     }
   }
 
   async connect(targetAddr: string, alias: string = '') {
     await this.authenticate();
 
-    const resp = await follow({
-      fromAddr: this.address,
-      toAddr: targetAddr,
-      alias,
-      namespace: this.namespace,
-      url: this.endpoint.cyberConnectApi,
-      signature: this.signature,
-    });
+    try {
+      const resp = await follow({
+        fromAddr: this.address,
+        toAddr: targetAddr,
+        alias,
+        namespace: this.namespace,
+        url: this.endpoint.cyberConnectApi,
+        signature: this.signature,
+      });
 
-    if (resp?.data?.follow.result !== 'SUCCESS') {
-      console.error('follow error: ', resp?.data?.follow.result);
-      return;
+      if (resp?.data?.follow.result !== 'SUCCESS') {
+        throw new ConnectError(
+          ErrorCode.GraphqlError,
+          resp?.data?.follow.result
+        );
+      }
+
+      console.log('Connect success');
+    } catch (e) {
+      throw new ConnectError(ErrorCode.GraphqlError, e as string);
     }
-
-    console.log('Connect success');
 
     this.ceramicConnect(targetAddr, alias);
   }
@@ -251,20 +281,26 @@ class CyberConnect {
   async disconnect(targetAddr: string) {
     await this.authenticate();
 
-    const resp = await unfollow({
-      fromAddr: this.address,
-      toAddr: targetAddr,
-      url: this.endpoint.cyberConnectApi,
-      namespace: this.namespace,
-      signature: this.signature,
-    });
+    try {
+      const resp = await unfollow({
+        fromAddr: this.address,
+        toAddr: targetAddr,
+        url: this.endpoint.cyberConnectApi,
+        namespace: this.namespace,
+        signature: this.signature,
+      });
 
-    if (resp?.data?.unfollow.result !== 'SUCCESS') {
-      console.error('unfollow error: ', resp?.data?.unfollow.result);
-      return;
+      if (resp?.data?.unfollow.result !== 'SUCCESS') {
+        throw new ConnectError(
+          ErrorCode.GraphqlError,
+          resp?.data?.unfollow.result
+        );
+      }
+
+      console.log('Disconnect success');
+    } catch (e) {
+      throw new ConnectError(ErrorCode.GraphqlError, e as string);
     }
-
-    console.log('Disconnect success');
 
     this.ceramicDisconnect(targetAddr);
   }
@@ -272,21 +308,27 @@ class CyberConnect {
   async setAlias(targetAddr: string, alias: string) {
     await this.authenticate();
 
-    const resp = await setAlias({
-      fromAddr: this.address,
-      toAddr: targetAddr,
-      url: this.endpoint.cyberConnectApi,
-      namespace: this.namespace,
-      signature: this.signature,
-      alias,
-    });
+    try {
+      const resp = await setAlias({
+        fromAddr: this.address,
+        toAddr: targetAddr,
+        url: this.endpoint.cyberConnectApi,
+        namespace: this.namespace,
+        signature: this.signature,
+        alias,
+      });
 
-    if (resp?.data?.setAlias.result !== 'SUCCESS') {
-      console.error('setAlias error: ', resp?.data?.setAlias.result);
-      return;
+      if (resp?.data?.setAlias.result !== 'SUCCESS') {
+        throw new ConnectError(
+          ErrorCode.GraphqlError,
+          resp?.data?.setAlias.result
+        );
+      }
+
+      console.log('Set alias success');
+    } catch (e) {
+      throw new ConnectError(ErrorCode.GraphqlError, e as string);
     }
-
-    console.log('Set alias success');
 
     this.ceramicSetAlias(targetAddr, alias);
   }
