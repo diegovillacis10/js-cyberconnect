@@ -59,7 +59,9 @@ class CyberConnect {
       ...keyDidResolver,
     };
 
-    if (!ethProvider) return;
+    if (!ethProvider) {
+      throw new ConnectError(ErrorCode.EmptyEthProvider);
+    }
 
     ethProvider.enable().then((addresses: string[]) => {
       if (addresses[0]) {
@@ -75,7 +77,7 @@ class CyberConnect {
     }
 
     if (!this.authProvider) {
-      throw new ConnectError(ErrorCode.NoAuthProvider);
+      throw new ConnectError(ErrorCode.EmptyAuthProvider);
     }
 
     const rst = await this.authProvider.authenticate(
@@ -90,11 +92,17 @@ class CyberConnect {
     }
 
     if (!this.authProvider) {
-      new ConnectError(ErrorCode.NoAuthProvider).printError();
+      new ConnectError(ErrorCode.EmptyAuthProvider).printError();
       return;
     }
 
-    if (!this.ceramicClient) return;
+    if (!this.ceramicClient) {
+      new ConnectError(
+        ErrorCode.CeramicError,
+        'Can not find ceramic client'
+      ).printError();
+      return;
+    }
 
     const getPermission = async (request: any) => {
       return request.payload.paths;

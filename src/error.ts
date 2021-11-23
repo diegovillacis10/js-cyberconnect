@@ -14,7 +14,8 @@ export class ConnectError {
 
 export enum ErrorCode {
   EmptyNamespace = 'EmptyNamespace',
-  NoAuthProvider = 'NoAuthProvider',
+  EmptyEthProvider = 'EmptyEthProvider',
+  EmptyAuthProvider = 'EmptyAuthProvider',
   NetworkError = 'NetworkError',
   GraphqlError = 'GraphqlError',
   CeramicError = 'CeramicError',
@@ -22,7 +23,8 @@ export enum ErrorCode {
 
 const errors: { [key in ErrorCode]: string } = {
   EmptyNamespace: 'Namespace can not be empty',
-  NoAuthProvider: 'Could not find authProvider',
+  EmptyEthProvider: 'Eth provider can not be empty',
+  EmptyAuthProvider: 'Could not find authProvider',
   NetworkError: '',
   GraphqlError: '',
   CeramicError: '',
