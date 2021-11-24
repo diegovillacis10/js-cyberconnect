@@ -284,8 +284,8 @@ class CyberConnect {
       }
 
       console.log('Connect success');
-    } catch (e) {
-      throw new ConnectError(ErrorCode.GraphqlError, e as string);
+    } catch (e: any) {
+      throw new ConnectError(ErrorCode.GraphqlError, e.message || e);
     }
 
     this.ceramicConnect(targetAddr, alias);
@@ -311,8 +311,8 @@ class CyberConnect {
       }
 
       console.log('Disconnect success');
-    } catch (e) {
-      throw new ConnectError(ErrorCode.GraphqlError, e as string);
+    } catch (e: any) {
+      throw new ConnectError(ErrorCode.GraphqlError, e.message || e);
     }
 
     this.ceramicDisconnect(targetAddr);
@@ -339,8 +339,8 @@ class CyberConnect {
       }
 
       console.log('Set alias success');
-    } catch (e) {
-      throw new ConnectError(ErrorCode.GraphqlError, e as string);
+    } catch (e: any) {
+      throw new ConnectError(ErrorCode.GraphqlError, e.message || e);
     }
 
     this.ceramicSetAlias(targetAddr, alias);
