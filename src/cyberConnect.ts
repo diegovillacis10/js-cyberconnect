@@ -72,7 +72,7 @@ class CyberConnect {
   }
 
   async authenticate() {
-    if (this.idxInstance) {
+    if (this.signature) {
       return;
     }
 
@@ -138,11 +138,10 @@ class CyberConnect {
 
   async getOutboundLink() {
     if (!this.idxInstance) {
-      new ConnectError(
+      throw new ConnectError(
         ErrorCode.CeramicError,
         'Could not find idx instance'
-      ).printError();
-      return null;
+      );
     }
 
     const result = (await this.idxInstance.get(
@@ -153,108 +152,114 @@ class CyberConnect {
   }
 
   private async ceramicConnect(targetAddr: string, alias: string = '') {
-    await this.setupIdx();
+    try {
+      await this.setupIdx();
 
-    const outboundLink = await this.getOutboundLink();
+      const outboundLink = await this.getOutboundLink();
 
-    if (!outboundLink) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Can not get ceramic outboundLink'
-      ).printError();
-      return;
-    }
+      if (!outboundLink) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Can not get ceramic outboundLink'
+        );
+      }
 
-    if (!this.idxInstance) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Could not find idx instance'
-      ).printError();
-      return;
-    }
+      if (!this.idxInstance) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Could not find idx instance'
+        );
+      }
 
-    const link = outboundLink.find((link) => {
-      return link.target === targetAddr && link.namespace === this.namespace;
-    });
-
-    if (!link) {
-      const curTimeStr = String(Date.now());
-      outboundLink.push({
-        target: targetAddr,
-        connectionType: 'follow',
-        namespace: this.namespace,
-        alias,
-        createdAt: curTimeStr,
+      const link = outboundLink.find((link) => {
+        return link.target === targetAddr && link.namespace === this.namespace;
       });
-      this.idxInstance.set('cyberConnect', { outboundLink });
-    } else {
-      console.warn('You have already connected to the target address');
+
+      if (!link) {
+        const curTimeStr = String(Date.now());
+        outboundLink.push({
+          target: targetAddr,
+          connectionType: 'follow',
+          namespace: this.namespace,
+          alias,
+          createdAt: curTimeStr,
+        });
+        this.idxInstance.set('cyberConnect', { outboundLink });
+      } else {
+        console.warn('You have already connected to the target address');
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
   private async ceramicDisconnect(targetAddr: string) {
-    await this.setupIdx();
+    try {
+      await this.setupIdx();
 
-    const outboundLink = await this.getOutboundLink();
+      const outboundLink = await this.getOutboundLink();
 
-    if (!outboundLink) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Can not get ceramic outboundLink'
-      ).printError();
-      return;
+      if (!outboundLink) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Can not get ceramic outboundLink'
+        );
+      }
+
+      if (!this.idxInstance) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Could not find idx instance'
+        );
+      }
+
+      const newOutboundLink = outboundLink.filter((link) => {
+        return link.target !== targetAddr || link.namespace !== this.namespace;
+      });
+
+      this.idxInstance.set('cyberConnect', {
+        outboundLink: newOutboundLink,
+      });
+    } catch (e) {
+      console.error(e);
     }
-
-    if (!this.idxInstance) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Could not find idx instance'
-      ).printError();
-      return;
-    }
-
-    const newOutboundLink = outboundLink.filter((link) => {
-      return link.target !== targetAddr || link.namespace !== this.namespace;
-    });
-
-    this.idxInstance.set('cyberConnect', {
-      outboundLink: newOutboundLink,
-    });
   }
 
   private async ceramicSetAlias(targetAddr: string, alias: string) {
-    await this.setupIdx();
+    try {
+      await this.setupIdx();
 
-    const outboundLink = await this.getOutboundLink();
+      const outboundLink = await this.getOutboundLink();
 
-    if (!outboundLink) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Can not get ceramic outboundLink'
-      ).printError();
-      return;
-    }
+      if (!outboundLink) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Can not get ceramic outboundLink'
+        );
+      }
 
-    if (!this.idxInstance) {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        'Could not find idx instance'
-      ).printError();
-      return;
-    }
+      if (!this.idxInstance) {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          'Could not find idx instance'
+        );
+      }
 
-    const index = outboundLink.findIndex((link) => {
-      return link.target === targetAddr && link.namespace === this.namespace;
-    });
+      const index = outboundLink.findIndex((link) => {
+        return link.target === targetAddr && link.namespace === this.namespace;
+      });
 
-    if (index !== -1) {
-      outboundLink[index] = { ...outboundLink[index], alias };
-      this.idxInstance.set('cyberConnect', { outboundLink });
-    } else {
-      new ConnectError(
-        ErrorCode.CeramicError,
-        "Couldn't find the target address in the given namespace"
-      ).printError();
+      if (index !== -1) {
+        outboundLink[index] = { ...outboundLink[index], alias };
+        this.idxInstance.set('cyberConnect', { outboundLink });
+      } else {
+        throw new ConnectError(
+          ErrorCode.CeramicError,
+          "Couldn't find the target address in the given namespace"
+        );
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 
