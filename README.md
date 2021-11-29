@@ -1,6 +1,7 @@
 # CyberConnect
 
-The JavaScript library provides two primary functions, connect and disconnect. The library encapsulates the complex authentication logic (authenticate to Ceramic Network) into easy-to-use functions. [CyberConnect API](https://docs.cyberconnect.me/writes).
+The JavaScript library provides two primary functions, connect and disconnect. The library encapsulates the complex authentication logic (authenticate to Ceramic Network) into easy-to-use functions. 
+[CyberConnect API](https://docs.cyberconnect.me/connect-and-disconnect).
 
 ## Getting started
 
