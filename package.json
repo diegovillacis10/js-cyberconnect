@@ -28,6 +28,7 @@
   "dependencies": {
     "@3id/connect": "^0.2.5",
     "@ceramicnetwork/3id-did-resolver": "^1.4.6",
+    "@ceramicnetwork/blockchain-utils-linking": "^1.5.1-rc.1",
     "@ceramicnetwork/http-client": "^1.4.2",
     "@ceramicstudio/idx": "^0.12.2",
     "@stablelib/sha256": "^1.0.1",

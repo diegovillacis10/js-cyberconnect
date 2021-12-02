@@ -3,53 +3,47 @@ import KeyDidResolver from 'key-did-resolver';
 import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver';
 import ThreeIdProvider from '3id-did-provider';
 import { EthereumAuthProvider } from '@3id/connect';
+import {
+  SolanaAuthProvider,
+  solana,
+} from '@ceramicnetwork/blockchain-utils-linking';
 import { hash } from '@stablelib/sha256';
 import { fromString } from 'uint8arrays';
 import { DID } from 'dids';
 import { IDX } from '@ceramicstudio/idx';
-import { endpoints, Env, Endpoint } from './network';
+import { endpoints } from './network';
 import { follow, unfollow, setAlias } from './queries';
 import { ConnectError, ErrorCode } from './error';
-
-interface Connection {
-  connectionType: string;
-  target: string;
-  namespace: string;
-  createdAt: string;
-  alias: string;
-}
-
-type Connections = Connection[];
-
-interface CyberConnetStore {
-  outboundLink: Connections;
-}
+import { Endpoint, Chain, CyberConnetStore, Config } from './types';
+import { getAddressByProvider } from './utils';
+import { Env } from '.';
 
 class CyberConnect {
   address: string = '';
   namespace: string;
   endpoint: Endpoint;
   ceramicClient: CeramicClient;
-  authProvider: EthereumAuthProvider | undefined;
+  authProvider: EthereumAuthProvider | SolanaAuthProvider | undefined;
   resolverRegistry: any;
   idxInstance: IDX | undefined;
   signature: string = '';
+  chain: Chain = Chain.ETH;
+  chainRef: string = '';
+  provider: any = null;
 
-  // ethProvider is an Ethereum provider and addresses an array of strings
-  constructor(config: {
-    ethProvider: any;
-    namespace: string;
-    env: keyof typeof Env;
-  }) {
-    const { ethProvider, namespace, env } = config;
+  constructor(config: Config) {
+    const { provider, namespace, env, chainRef, chain } = config;
 
     if (!namespace) {
       throw new ConnectError(ErrorCode.EmptyNamespace);
     }
 
     this.namespace = namespace;
-    this.endpoint = endpoints[env] || endpoints.PRODUCTION;
+    this.endpoint = endpoints[env || Env.PRODUCTION];
     this.ceramicClient = new CeramicClient(this.endpoint.ceramicUrl);
+    this.chain = chain || Chain.ETH;
+    this.chainRef = chainRef || '';
+    this.provider = provider;
 
     const keyDidResolver = KeyDidResolver.getResolver();
     const threeIdResolver = ThreeIdResolver.getResolver(this.ceramicClient);
@@ -58,23 +52,55 @@ class CyberConnect {
       ...threeIdResolver,
       ...keyDidResolver,
     };
+  }
 
-    if (!ethProvider) {
+  async getAuthProvider() {
+    if (!this.provider) {
       throw new ConnectError(ErrorCode.EmptyEthProvider);
     }
 
-    ethProvider.enable().then((addresses: string[]) => {
-      if (addresses[0]) {
-        this.address = addresses[0];
-        this.authProvider = new EthereumAuthProvider(ethProvider, this.address);
+    try {
+      this.address = await getAddressByProvider(this.provider, this.chain);
+    } catch (e) {
+      throw new ConnectError(ErrorCode.AuthProviderError, e as string);
+    }
+
+    switch (this.chain) {
+      case Chain.ETH: {
+        this.authProvider = new EthereumAuthProvider(
+          this.provider,
+          this.address
+        );
       }
-    });
+      case Chain.SOLANA: {
+        if (!this.provider.publicKey) {
+          throw new ConnectError(
+            ErrorCode.AuthProviderError,
+            'Public key is empty'
+          );
+        }
+        if (!this.provider.signMessage) {
+          throw new ConnectError(
+            ErrorCode.CeramicError,
+            'Sign message is empty'
+          );
+        }
+
+        this.authProvider = new SolanaAuthProvider(
+          this.provider,
+          this.address,
+          this.chainRef || solana.SOLANA_MAINNET_CHAIN_REF
+        );
+      }
+    }
   }
 
   async authenticate() {
     if (this.signature) {
       return;
     }
+
+    await this.getAuthProvider();
 
     if (!this.authProvider) {
       throw new ConnectError(ErrorCode.EmptyAuthProvider);
