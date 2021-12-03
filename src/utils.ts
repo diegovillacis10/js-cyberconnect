@@ -1,8 +1,11 @@
-import { Chain } from './types';
+import { Blockchain } from './types';
 
-export const getAddressByProvider = async (provider: any, chain: Chain) => {
+export const getAddressByProvider = async (
+  provider: any,
+  chain: Blockchain
+) => {
   switch (chain) {
-    case Chain.ETH: {
+    case Blockchain.ETH: {
       const addresses = await provider.request({ method: 'eth_accounts' });
       if (addresses && addresses[0]) {
         return addresses[0];
@@ -10,7 +13,7 @@ export const getAddressByProvider = async (provider: any, chain: Chain) => {
         return '';
       }
     }
-    case Chain.SOLANA: {
+    case Blockchain.SOLANA: {
       return provider.publicKey.toString();
     }
     default: {

@@ -14,7 +14,7 @@ import { IDX } from '@ceramicstudio/idx';
 import { endpoints } from './network';
 import { follow, unfollow, setAlias } from './queries';
 import { ConnectError, ErrorCode } from './error';
-import { Endpoint, Chain, CyberConnetStore, Config } from './types';
+import { Endpoint, Blockchain, CyberConnetStore, Config } from './types';
 import { getAddressByProvider } from './utils';
 import { Env } from '.';
 
@@ -27,7 +27,7 @@ class CyberConnect {
   resolverRegistry: any;
   idxInstance: IDX | undefined;
   signature: string = '';
-  chain: Chain = Chain.ETH;
+  chain: Blockchain = Blockchain.ETH;
   chainRef: string = '';
   provider: any = null;
 
@@ -41,7 +41,7 @@ class CyberConnect {
     this.namespace = namespace;
     this.endpoint = endpoints[env || Env.PRODUCTION];
     this.ceramicClient = new CeramicClient(this.endpoint.ceramicUrl);
-    this.chain = chain || Chain.ETH;
+    this.chain = chain || Blockchain.ETH;
     this.chainRef = chainRef || '';
     this.provider = provider;
 
@@ -66,30 +66,30 @@ class CyberConnect {
     }
 
     switch (this.chain) {
-      case Chain.ETH: {
+      case Blockchain.ETH: {
         this.authProvider = new EthereumAuthProvider(
           this.provider,
           this.address
         );
       }
-      case Chain.SOLANA: {
+      case Blockchain.SOLANA: {
         if (!this.provider.publicKey) {
           throw new ConnectError(
             ErrorCode.AuthProviderError,
-            'Public key is empty'
+            'Wallet Not Connected'
           );
         }
         if (!this.provider.signMessage) {
           throw new ConnectError(
-            ErrorCode.CeramicError,
-            'Sign message is empty'
+            ErrorCode.AuthProviderError,
+            'Provider must implement signMessage'
           );
         }
 
         this.authProvider = new SolanaAuthProvider(
           this.provider,
           this.address,
-          this.chainRef || solana.SOLANA_MAINNET_CHAIN_REF
+          this.chainRef
         );
       }
     }

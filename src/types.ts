@@ -1,3 +1,5 @@
+import { solana } from '@ceramicnetwork/blockchain-utils-linking';
+
 export interface Connection {
   connectionType: string;
   target: string;
@@ -8,10 +10,15 @@ export interface Connection {
 
 export type Connections = Connection[];
 
-export enum Chain {
+export enum Blockchain {
   ETH = 'ETH',
   SOLANA = 'SOLANA',
 }
+
+export type SolananChainRef =
+  | typeof solana.SOLANA_DEVNET_CHAIN_REF
+  | typeof solana.SOLANA_MAINNET_CHAIN_REF
+  | typeof solana.SOLANA_TESTNET_CHAIN_REF;
 
 export interface CyberConnetStore {
   outboundLink: Connections;
@@ -24,13 +31,13 @@ export interface ConfigBase {
 }
 
 export interface ConfigEth {
-  chain?: Chain.ETH;
+  chain?: Blockchain.ETH;
   chainRef?: never;
 }
 
 export interface ConfigSolana {
-  chain: Chain.SOLANA;
-  chainRef: string;
+  chain: Blockchain.SOLANA;
+  chainRef: SolananChainRef;
 }
 
 export type Config = ConfigBase & (ConfigEth | ConfigSolana);
