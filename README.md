@@ -57,7 +57,7 @@ cyberConnect.disconnect(targetAddr);
 
 ### Solana
 
-You can get Solanan proivder from [@solana/wallet-adapter-react]('https://github.com/solana-labs/wallet-adapter)
+You can get Solana provider from [@solana/wallet-adapter-react]('https://github.com/solana-labs/wallet-adapter)
 
 ```ts
 import { useWallet } from '@solana/wallet-adapter-react';
