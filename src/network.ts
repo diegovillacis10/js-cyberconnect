@@ -1,13 +1,4 @@
-export enum Env {
-  STAGING = 'STAGING',
-  PRODUCTION = 'PRODUCTION',
-}
-
-export interface Endpoint {
-  ceramicUrl: string;
-  cyberConnectSchema: string;
-  cyberConnectApi: string;
-}
+import { Env, Endpoint } from './types';
 
 export const endpoints: { [key in Env]: Endpoint } = {
   STAGING: {
