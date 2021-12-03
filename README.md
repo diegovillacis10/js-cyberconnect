@@ -18,19 +18,22 @@ yarn add @cyberlab/cyberconnect
 #### Init CyberConnect
 
 ```ts
-import CyberConnect, { Env, Chain } from 'npm install @cyberlab/cyberconnect';
+import CyberConnect, {
+  Env,
+  Blockchain,
+} from 'npm install @cyberlab/cyberconnect';
 
 const cyberConnect = new CyberConnect({
   namespace: 'CyberConnect',
   env: Env.Production,
-  chain: Chain.ETH,
+  chain: Blockchain.ETH,
   provider: provider,
 });
 ```
 
 - `namespace` - Your applciation name.
 - `env` - (optional) Env decides the endpoints. Now we have `staging` and `production`. (The default value is `Env.Production`).
-- `chain` - (optional) The blockchain you want to connect with. Now we support `ethereum` and `solana`. (The default is `Chain.ETH`).
+- `chain` - (optional) The blockchain you want to connect with. Now we support `ethereum` and `solana`. (The default is `Blockchain.ETH`).
 - `provider` - The corresponding provider of the given chain.
 
 See [Solana](#Solana) for Solana demo.
@@ -66,14 +69,14 @@ const solanaProvider = useWallet();
 ```ts
 import CyberConnect, {
   Env,
-  Chain,
+  Blockchain,
   Solana,
 } from 'npm install @cyberlab/cyberconnect';
 
 const cyberConnect = new CyberConnect({
   namespace: 'CyberConnect',
   env: Env.Production,
-  chain: Chain.ETH,
+  chain: Blockchain.ETH,
   provider: solanaProvider,
   chainRef: Solana.SOLANA_MAINNET_CHAIN_REF,
 });
